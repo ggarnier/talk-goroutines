@@ -1,0 +1,1267 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Goroutines and channels in practice</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/sky.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Custom styles -->
+		<style>
+			.reveal section img {
+				border: 0;
+				background-color: transparent;
+				box-shadow: none;
+			}
+			.reveal pre code {
+				max-height: 800px;
+			}
+
+			/* Reveal code focus plugin */
+			.reveal .slides section .fragment.current-only {
+			  opacity: 1;
+			  visibility: visible;
+			  display: none;
+			}
+			.reveal .slides section .fragment.current-only.current-fragment {
+			  display: block;
+			}
+			.line {
+			  display: block;
+			}
+			.line.focus { background: lightcyan; color: #657b83; }
+			.line.focus .hljs-comment, .line.focus .hljs-quote { color: #93a1a1; }
+			.line.focus .hljs-keyword, .line.focus .hljs-selector-tag, .line.focus .hljs-addition { color: #859900; }
+			.line.focus .hljs-number, .line.focus .hljs-string, .line.focus .hljs-meta .hljs-meta-string, .line.focus .hljs-literal, .line.focus .hljs-doctag, .line.focus .hljs-regexp { color: #2aa198; }
+			.line.focus .hljs-title, .line.focus .hljs-section, .line.focus .hljs-name, .line.focus .hljs-selector-id, .line.focus .hljs-selector-class { color: #268bd2; }
+			.line.focus .hljs-attribute, .line.focus .hljs-attr, .line.focus .hljs-variable, .line.focus .hljs-template-variable, .line.focus .hljs-class .hljs-title, .line.focus .hljs-type { color: #b58900; }
+			.line.focus .hljs-symbol, .line.focus .hljs-bullet, .line.focus .hljs-subst, .line.focus .hljs-meta, .line.focus .hljs-meta .hljs-keyword, .line.focus .hljs-selector-attr, .line.focus .hljs-selector-pseudo, .line.focus .hljs-link { color: #cb4b16; }
+			.line.focus .hljs-built_in, .line.focus .hljs-deletion { color: #dc322f; }
+			.line.focus .hljs-formula { background: #eee8d5; }
+			.line.focus .hljs-emphasis { font-style: italic; }
+			.line.focus .hljs-strong { font-weight: bold; }
+			.yellow-slide .line.focus:nth-child(2) { background: yellow; }
+		</style>
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				      <section data-markdown>
+        <script type="text/template">
+          <h1 style="color: #054e18">
+**Goroutines** and **channels** in practice
+</h1>
+
+<br />
+## Guilherme Garnier
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          <!-- .slide: data-background="#fff" -->
+
+<div style="display: flex">
+  <div>
+    <img src="static/eu.jpg" width="400px" />
+
+    https://blog.guilhermegarnier.com
+
+    <div style="display: flex; margin-top: 20px; justify-content: center; align-items: center;">
+      <img src="static/twitter.svg" style="width: 40px; margin: 0 15px" />
+      [@gpgarnier](https://twitter.com/gpgarnier/)
+    </div>
+  </div>
+
+  <div>
+    <img src="static/globocom.png" style="height: 300px" /> <!-- .element: class="fragment" data-fragment-index="1" -->
+
+    <p style="font-size: 150%">We're hiring!</p> <!-- .element: class="fragment" data-fragment-index="2" -->
+
+    https://talentos.globo.com <!-- .element: class="fragment" data-fragment-index="2" -->
+  </div>
+</div>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          <!-- .slide: data-background="#fff" data-background-image="static/tsuru.png" data-background-size="auto 100%" -->
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          <p style="display: flex; justify-content: space-around; flex-wrap: wrap; align-items: center;">
+  <img src="static/ruby.png" style="width: 180px" />
+  <img src="static/java.png" style="width: 300px" />
+  <img src="static/python.svg" style="width: 400px" />
+  <img src="static/js.png" style="width: 200px" />
+  <img src="static/perl.gif" style="width: 400px" />
+  <img src="static/cpp.svg" style="width: 200px" />
+  <img src="static/php.png" style="width: 300px" />
+</p>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Concurrency is hard
+
+- Threads are expensive
+- Hard to share state
+- Hard to manage threads lifecycle
+
+<!--
+Handling concurrent code is for experts
+-->
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Why is **Go** different?
+
+<div style="display: flex; align-items: center">
+  <ul>
+    <li>simple concurrency model</li>
+    <li>embraces concurrency with **goroutines**</li>
+    <li>easy to share state with **channels**</li>
+  </ul>
+
+  <img src="static/strong-gopher.png" style="width: 640px" />
+</div>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # What's a goroutine?
+
+- Abstraction above OS threads
+- Don't have an identity like thread IDs
+- Not suspended unless sleeping, blocked or on a function call
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Scheduling
+
+<br />
+
+| | Threads | Goroutines |
+|-|---------|------------|
+| **Scheduled by** | OS kernel | Go runtime |
+| **Work distribution** | defined in the code | defined by the Go scheduler |
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Go M:N scheduler
+
+Maps M goroutines to N threads
+
+![](static/go-scheduler.png)
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ```go
+	numGoroutines := 2
+	wg := sync.WaitGroup{}
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 100; i++ {
+				for j := 0; j < 10000000; j++ {
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+```
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Tracing the execution
+
+<div style="display: inline-block; font-size: 70%">
+  <div style="display: flex; align-items: center">
+    <span style="width: 50px; height: 50px; background-color: #889e89"></span>
+    <span style="margin-left: 20px">Runnable goroutines</span>
+  </div>
+  <div style="display: flex; align-items: center">
+    <span style="width: 50px; height: 50px; background-color: #807f8a"></span>
+    <span style="margin-left: 20px">Running goroutines</span>
+  </div>
+</div>
+
+`go run main.go` (multithread)
+
+<img src="static/trace-multithread.png" style="width:1200px; height: 80px" />
+
+<br />
+
+`GOMAXPROCS=1 go run main.go` (single thread)
+
+<img src="static/trace-singlethread-nosleep.png" style="width:1200px; height: 120px" />
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ```go
+	numGoroutines := 2
+	wg := sync.WaitGroup{}
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 100; i++ {
+				for j := 0; j < 10000000; j++ {
+				}
+				time.Sleep(1 * time.Nanosecond)
+			}
+		}()
+	}
+
+	wg.Wait()
+```
+
+<span class="fragment current-only" data-code-focus="11"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Tracing the execution
+
+<div style="display: inline-block; font-size: 70%">
+  <div style="display: flex; align-items: center">
+    <span style="width: 50px; height: 50px; background-color: #889e89"></span>
+    <span style="margin-left: 20px">Runnable goroutines</span>
+  </div>
+  <div style="display: flex; align-items: center">
+    <span style="width: 50px; height: 50px; background-color: #807f8a"></span>
+    <span style="margin-left: 20px">Running goroutines</span>
+  </div>
+</div>
+
+`GOMAXPROCS=1 go run main.go` (single thread, with sleep)
+
+<img src="static/trace-singlethread-sleep.png" style="width:1200px; height: 140px" />
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Stack size
+
+<div style="display: flex; justify-content: space-between">
+  <div style="width: 600px">
+    <h3>Threads</h3>
+    <ul>
+      <li>fixed (~ 1-8 MB)</li>
+      <li>wasteful for small jobs</li>
+      <li>not enough for large jobs</li>
+    </ul>
+  </div>
+
+  <div style="width: 600px">
+    <h3>Goroutines</h3>
+    <ul>
+      <li>dynamic</li>
+      <li>starts small (~ 4 kB)</li>
+      <li>grows and shrinks when needed</li>
+    </ul>
+  </div>
+</div>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Goroutines memory usage
+
+```go
+	memConsumed := func() uint64 {...}
+	var ch <-chan interface{}
+	var wg sync.WaitGroup
+
+	const numGoroutines = 100000
+	wg.Add(numGoroutines)
+
+	before := memConsumed()
+	for i := 0; i < numGoroutines; i++ {
+		go func() { wg.Done(); <-ch }()
+	}
+	wg.Wait()
+	after := memConsumed()
+
+	fmt.Printf("%.3f bytes", float64(after-before)/numGoroutines)
+```
+
+<span class="fragment current-only" data-code-focus="5,9"></span>
+<span class="fragment current-only" data-code-focus="10"></span>
+<span class="fragment current-only" data-code-focus="8,13"></span>
+
+<p style="font-size: 70%; margin-top: 50px">source: Concurrency in Go, page 44</p>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Goroutines memory usage
+
+| Mem (GB) | Goroutines |
+|:--------:|:----------:|
+| 1  | 370 k |
+| 2  | 740 k |
+| 4  | 1.5 M |
+| 8  | 2.9 M |
+| 16 | 5.9 M |
+| 32 | 11.8 M |
+| 64 | 23.7 M |
+
+<!--
+| 128 | 47.5 M |
+| 256 | 95 M |
+| 512  | 190 M |
+-->
+
+<p style="font-size: 70%; margin-top: 50px">source: Concurrency in Go, page 44</p>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # State sharing
+
+> Do not communicate by sharing memory; instead, share memory by communicating
+
+https://blog.golang.org/share-memory-by-communicating
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Example: Healthchecks in Java
+
+```java
+	public class Main {
+		public static void main(String args[]) {
+			String[] urls = {"url1", "url2", ...};
+			Thread[] threads = new Thread[urls.length];
+			for (int i = 0; i < urls.length; i++) {
+				threads[i] = new Thread(new Healthcheck(urls[i]));
+				threads[i].start();
+			}
+
+			try {
+				for (Thread t : threads) {
+					t.join();
+				}
+			} catch (Exception e) {}
+
+			System.out.println(Healthcheck.getOkCount() + " ok, " +
+				Healthcheck.getErrCount() + " errors");
+		}
+	}
+```
+
+<span class="fragment current-only" data-code-focus="3"></span>
+<span class="fragment current-only" data-code-focus="6,7,12"></span>
+<span class="fragment current-only" data-code-focus="16,17"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Example: Healthchecks in Java
+
+```java
+	class Healthcheck implements Runnable {
+		private static int okCount = 0;
+		private static int errCount = 0;
+
+		public static synchronized void addOk() { Healthcheck.okCount++; }
+		public static synchronized void addErr() { Healthcheck.errCount++; }
+		public static int getOkCount() { return Healthcheck.okCount; }
+		public static int getErrCount() { return Healthcheck.errCount; }
+
+		public void run() {
+			try {
+				if (getStatusCode(this.url) == 200) {
+					Healthcheck.addOk();
+				} else {
+					Healthcheck.addErr();
+				}
+			} catch(Exception e) {
+				Healthcheck.addErr();
+			}
+		}
+
+		private int getStatusCode(String url) throws Exception {
+			...
+		}
+	}
+```
+
+<span class="fragment current-only" data-code-focus="2,3"></span>
+<span class="fragment current-only" data-code-focus="5,6"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Example: Healthchecks in Go
+
+```go
+	type Results struct {
+		okCount	int
+		errCount int
+	}
+
+	func main() {
+		urls := []string{"url1", "url2", ...}
+
+		r := runChecks(urls)
+		fmt.Printf("%d ok, %d errors\n", r.okCount, r.errCount)
+	}
+```
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Version 1: sequential code
+
+```go
+	func runChecks(urls []string) Results {
+		r := Results{}
+		for _, url := range urls {
+			resp, err := http.Head(url)
+			if err != nil || resp.StatusCode != http.StatusOK {
+				r.errCount++
+			} else {
+				r.okCount++
+			}
+		}
+
+		return r
+	}
+```
+
+<!--
+- gives the correct response
+- no sync mecanisms required
+- hard to scale
+-->
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Version 2: using goroutines
+
+```go
+	func runChecks(urls []string) Results {
+		r := Results{}
+		lock := sync.Mutex{}
+		for _, url := range urls {
+			go func(url string) {
+				resp, err := http.Head(url)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					lock.Lock()
+					r.errCount++
+					lock.Unlock()
+				} else {
+					lock.Lock()
+					r.okCount++
+					lock.Unlock()
+				}
+			}(url)
+		}
+
+		// Wrong way to wait for goroutines to finish
+		time.Sleep(2 * time.Second)
+
+		return r
+	}
+```
+
+<span class="fragment current-only" data-code-focus="5"></span>
+<span class="fragment current-only" data-code-focus="3,8,10,12,14"></span>
+<span class="fragment current-only" data-code-focus="19,20"></span>
+
+<!--
+- requires syncing
+- easier to scale up
+- lock may result in contention
+-->
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Version 3: using channels
+
+```go
+	func runChecks(urls []string) Results {
+		r := Results{}
+		responses := make(chan bool)
+		for _, url := range urls {
+			go func(url string) {
+				resp, err := http.Head(url)
+				success := err == nil && resp.StatusCode == http.StatusOK
+				responses <- success
+			}(url)
+		}
+
+		for i := 0; i < len(urls); i++ {
+			success := <-responses
+			if success {
+				r.okCount++
+			} else {
+				r.errCount++
+			}
+		}
+
+		return r
+	}
+```
+
+<span class="fragment current-only" data-code-focus="3,8"></span>
+<span class="fragment current-only" data-code-focus="13"></span>
+
+<!--
+- no need to use locks
+- less code
+- better performance
+-->
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # What's a channel?
+
+- a conduit for streaming information
+- concurrency-safe
+- allows decoupling between sender and receiver
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Unbuffered channels
+
+- sender and receiver block each other
+- provide guarantee of delivery
+
+```go
+	stream := make(chan int)
+	go func() {
+		stream <- 1
+	}()
+	go func() {
+		<-stream
+	}()
+```
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Buffered channels
+
+- created with a maximum capacity
+- sender and receiver block each other when it's full
+- no guarantee of delivery
+
+```go
+	stream := make(chan int, 1)
+	go func() {
+		stream <- 1
+		stream <- 2 // blocks until the first receiver
+	}()
+	go func() {
+		<-stream // blocks until the first sender
+		<-stream
+	}()
+```
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Closed channels
+
+- We can't send values anymore
+- We can still receive values sent before closing it
+- If empty, receiving values gives the zero value of the channel type
+
+```go
+	ch := make(chan string, 2)
+	ch <- "foo"
+	ch <- "bar"
+	close(ch)
+
+	fmt.Println(<-ch) // "foo"
+	fmt.Println(<-ch) // "bar"
+	fmt.Println(<-ch) // ""
+```
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Closed channels
+
+How to receive until the channel closes?
+
+```go
+	ch := make(chan string, 2)
+
+	go func() {
+		ch <- "foo"
+		ch <- "bar"
+		close(ch)
+	}()
+
+	for v := range ch {
+		fmt.Println(v)
+	}
+```
+
+If the channel is empty, `range` blocks until the channel is closed
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Multiplexing channels
+
+```go
+	select {
+	case v := <-ch1:
+		fmt.Println("value read from ch1")
+	case v := <-ch2:
+		fmt.Println("value read from ch2")
+	case ch1 <- 10:
+		fmt.Println("value sent to ch1")
+	default:
+		fmt.Println("channels not ready")
+	}
+```
+
+If more than one condition is ready, a `case` is randomly chosen
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Unblocking receives
+
+```go
+	ch := make(chan int)
+	select {
+	case v, ok := <-ch:
+		if ok {
+			fmt.Printf("Value is %d", v)
+		} else {
+			fmt.Print("channel is closed")
+		}
+	default:
+		fmt.Print("channel is empty")
+	}
+```
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Timing out
+
+```go
+	ch := make(chan int)
+	select {
+	case v := <-ch:
+	case <- time.After(2*time.Second):
+		fmt.Print("no data after 2 seconds")
+	}
+```
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Pipelines
+
+![Pipeline](static/pipeline.png)
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Pipelines
+
+<!-- examples/pipeline/main.go -->
+
+```go
+	// Inputs an infinite stream
+	randomNumbers := func() <-chan int {
+		stream := make(chan int)
+		go func() {
+			defer close(stream)
+			for {
+				stream <- rand.Intn(100)
+			}
+		}()
+		return stream
+	}
+
+	// Transforms
+	double := func(input <-chan int) <-chan int {
+		stream := make(chan int)
+		go func() {
+			defer close(stream)
+			for i := range input {
+				stream <- i * 2
+			}
+		}()
+		return stream
+	}
+```
+
+<span class="fragment current-only" data-code-focus="2"></span>
+<span class="fragment current-only" data-code-focus="14"></span>
+<span class="fragment current-only" data-code-focus="3,10,15,22"></span>
+<span class="fragment current-only" data-code-focus="5,17"></span>
+<span class="fragment current-only" data-code-focus="6-8,18-20"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Pipelines
+
+```go
+	// Filters
+	onlyMultiplesOf10 := func(input <-chan int) <-chan int {
+		stream := make(chan int)
+		go func() {
+			defer close(stream)
+			for i := range input {
+				if i%10 == 0 {
+					stream <- i
+				}
+			}
+		}()
+		return stream
+	}
+
+	pipeline := onlyMultiplesOf10(double(randomNumbers()))
+	for i := range pipeline { // Infinite loop
+		fmt.Println(i)
+	}
+```
+
+<span class="fragment current-only" data-code-focus="15-18"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Managing goroutines lifecycle
+
+<!--
+- a goroutine can't know if other goroutines are running, or force them to stop
+-->
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Limiting the number of running goroutines
+
+<!-- examples/healthchecks-limit/main.go -->
+
+```go
+	max := 3 // Max simultaneous goroutines
+	running := make(chan struct{}, max)
+
+	for url := range urls {
+		running <- struct{}{} // waits for a free slot
+		go func(url string) {
+			defer func() {
+				<-running // releases slot
+			}()
+			// do work
+		}(url)
+	}
+```
+
+<span class="fragment current-only" data-code-focus="1"></span>
+<span class="fragment current-only" data-code-focus="2"></span>
+<span class="fragment current-only" data-code-focus="5"></span>
+<span class="fragment current-only" data-code-focus="8"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Limiting the number of running goroutines
+
+<!-- examples/healthchecks-limit/main.go -->
+
+```go
+	max := 3 // Max simultaneous goroutines
+	running := make(chan struct{}, max)
+
+	go func() {
+		for range time.Tick(100 * time.Millisecond) {
+			fmt.Printf("%d goroutines running\n", len(running))
+		}
+	}()
+
+	for url := range urls {
+		running <- struct{}{} // waits for a free slot
+		go func(url string) {
+			defer func() {
+				<-running // releases slot
+			}()
+			// do work
+		}(url)
+	}
+```
+
+<span class="fragment current-only" data-code-focus="4-8"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Forcing goroutines to stop
+
+Using a `done` channel
+
+<!-- examples/done-channel/main.go -->
+
+```go
+	done := make(chan struct{})
+	go func() {
+		defer func() {
+			done <- struct{}{}
+		}()
+		bufio.NewReader(os.Stdin).ReadByte() // read input from stdin
+	}()
+
+	randomNumbers := func() <-chan int {
+		stream := make(chan int)
+		go func() {
+			defer close(stream)
+			for {
+				select {
+				case <-done:
+					return
+				default:
+					stream <- rand.Intn(100)
+				}
+			}
+		}()
+		return stream
+	}
+```
+
+<span class="fragment current-only" data-code-focus="1,4"></span>
+<span class="fragment current-only" data-code-focus="14-19"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Forcing goroutines to stop
+
+Using context
+
+```go
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	go func() {
+		defer cancelFunc()
+		bufio.NewReader(os.Stdin).ReadByte() // read input from stdin
+	}()
+
+	randomNumbers := func() <-chan int {
+		stream := make(chan int)
+		go func() {
+			defer close(stream)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					stream <- rand.Intn(100)
+				}
+			}
+		}()
+		return stream
+	}
+```
+
+<span class="fragment current-only" data-code-focus="1"></span>
+<span class="fragment current-only" data-code-focus="3,13"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ### Forcing goroutines to stop
+
+Using context with timeout
+
+```go
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
+	go func() {
+		defer cancelFunc()
+		bufio.NewReader(os.Stdin).ReadByte() // read input from stdin
+	}()
+
+	randomNumbers := func() <-chan int {
+		stream := make(chan int)
+		go func() {
+			defer close(stream)
+			for {
+				select {
+				case <-ctx.Done(): // cancelFunc called or timeout reached
+					return
+				default:
+					stream <- rand.Intn(100)
+				}
+			}
+		}()
+		return stream
+	}
+```
+
+<span class="fragment current-only" data-code-focus="1"></span>
+<span class="fragment current-only" data-code-focus="13"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Common concurrency problems
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Deadlock
+
+```go
+	ch1 := make(chan int)
+	ch2 := make(chan int)
+
+	go func() {
+		n := <-ch2
+		ch1 <- 2 * n
+	}()
+
+	n := <-ch1
+	ch2 <- 2 * n
+```
+
+<span class="fragment current-only" data-code-focus="5,9"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Deadlock
+
+```shell
+$ go run main.go
+fatal error: all goroutines are asleep - deadlock!
+
+goroutine 1 [chan receive]:
+main.main()
+        main.go:12 +0xaa
+
+goroutine 17 [chan receive]:
+main.main.func1(0xc4200720c0, 0xc420072060)
+        main.go:8 +0x3e
+created by main.main
+        main.go:7 +0x89
+exit status 2
+```
+
+<span class="fragment current-only" data-code-focus="2"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Goroutine leak
+
+```go
+	urls := make(chan string)
+
+	go func() {
+		// defer close(urls)
+		urls <- "http://example.com/1"
+		urls <- "http://example.com/2"
+	}()
+
+	go func() {
+		defer fmt.Println("This will never run")
+		for url := range urls {
+			http.Get(url)
+			fmt.Println(url)
+		}
+	}()
+```
+
+<span class="fragment current-only" data-code-focus="4"></span>
+<span class="fragment current-only" data-code-focus="10"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Race Detector tool
+
+```go
+	func runChecks(urls []string) Results {
+		r := Results{}
+		lock := sync.Mutex{}
+		for _, url := range urls {
+			go func(url string) {
+				resp, err := http.Head(url)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					lock.Lock()
+					r.errCount++
+					lock.Unlock()
+				} else {
+					lock.Lock()
+					r.okCount++
+					lock.Unlock()
+				}
+			}(url)
+		}
+
+		// Wrong way to wait for goroutines to finish
+		time.Sleep(2 * time.Second)
+
+		return r
+	}
+```
+
+<span class="fragment current-only" data-code-focus="3,8,10,12,14"></span>
+<span class="fragment current-only" data-code-focus="19-20"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Race Detector tool
+
+```shell
+	$ go build -race
+	$ ./main
+	==================
+	WARNING: DATA RACE
+	Read at 0x00c4200ee2c0 by main goroutine:
+		main.runChecks()
+				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:35 +0x16b
+		main.main()
+				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:45 +0x87
+
+	Previous write at 0x00c4200ee2c0 by goroutine 7:
+		main.runChecks.func1()
+				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:26 +0x178
+
+	Goroutine 7 (finished) created at:
+		main.runChecks()
+				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:18 +0x123
+		main.main()
+				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:45 +0x87
+	==================
+	==================
+	WARNING: DATA RACE
+	...
+	==================
+	Found 2 data race(s)
+```
+
+<span class="fragment current-only" data-code-focus="1-2"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          ## Race Detector tool
+
+```go
+	func runChecks(urls []string) Results {
+		r := Results{lock: &sync.Mutex{}}
+		var wg sync.WaitGroup
+		for _, url := range urls {
+			wg.Add(1)
+			go func(url string) {
+				defer wg.Done()
+				resp, err := http.Head(url)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					r.lock.Lock()
+					r.errCount++
+					r.lock.Unlock()
+				} else {
+					r.lock.Lock()
+					r.okCount++
+					r.lock.Unlock()
+				}
+			}(url)
+		}
+
+		wg.Wait() // Blocks until all `wg.Done()` calls
+		return r
+	}
+```
+
+<span class="fragment current-only" data-code-focus="3,5,7,21"></span>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # References
+
+<div style="display: flex; align-items: flex-start; justify-content: space-around">
+  <a href="http://www.gopl.io/" target="_blank">
+    <img src="static/book-gopl.png" style="height: 550px" />
+  </a>
+  <a href="http://shop.oreilly.com/product/0636920046189.do" target="_blank">
+    <img src="static/book-concurrency-in-go.jpg" style="height: 550px" />
+  </a>
+</div>
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
+          # Questions?
+
+<br />
+
+https://blog.guilhermegarnier.com
+
+<img src="static/twitter.svg" style="width: 40px; margin: 0 15px" />
+[@gpgarnier](https://twitter.com/gpgarnier/)
+
+Slides: https://blog.guilhermegarnier.com/talk-goroutines/
+
+        </script>
+      </section>
+
+
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				width: 1280,
+				height: 800,
+				margin: 0.1,
+				controls: false,
+				progress: false,
+				history: true,
+				center: true,
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'lib/js/highlight.pack.js' },
+					{ src: 'plugin/reveal-code-focus/reveal-code-focus.js', callback: function() { RevealCodeFocus(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
