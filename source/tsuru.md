@@ -1,1 +1,1 @@
-<!-- .slide: data-background="#fff" data-background-image="static/tsuru.png" data-background-size="auto 100%" -->
+<!-- .slide: data-background="#fff" data-background-image="static/tsuru.png" data-background-size="100% auto" -->
