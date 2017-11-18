@@ -13,3 +13,5 @@
 		fmt.Print("channel is empty")
 	}
 ```
+
+<span class="fragment current-only" data-code-focus="3"></span>

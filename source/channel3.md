@@ -15,3 +15,6 @@
 		<-stream
 	}()
 ```
+
+<span class="fragment current-only" data-code-focus="1"></span>
+<span class="fragment current-only" data-code-focus="4,7"></span>

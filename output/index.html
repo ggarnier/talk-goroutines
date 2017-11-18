@@ -68,7 +68,7 @@
 </h1>
 
 <br />
-## Guilherme Garnier
+### Guilherme Garnier
 
         </script>
       </section>
@@ -172,9 +172,9 @@ Handling concurrent code is for experts
 
 <br />
 
-| | Threads | Goroutines |
-|-|---------|------------|
-| **Scheduled by** | OS kernel | Go runtime |
+| | Goroutines | Threads |
+|-|------------|---------|
+| **Scheduled by** | Go runtime | OS kernel |
 | **Work distribution** | defined in the code | defined by the Go scheduler |
 
         </script>
@@ -461,7 +461,7 @@ https://blog.golang.org/share-memory-by-communicating
 
 ```go
 	type Results struct {
-		okCount	int
+		okCount  int
 		errCount int
 	}
 
@@ -617,6 +617,9 @@ https://blog.golang.org/share-memory-by-communicating
 	}()
 ```
 
+<span class="fragment current-only" data-code-focus="1"></span>
+<span class="fragment current-only" data-code-focus="3,6"></span>
+
         </script>
       </section>
 
@@ -640,6 +643,9 @@ https://blog.golang.org/share-memory-by-communicating
 	}()
 ```
 
+<span class="fragment current-only" data-code-focus="1"></span>
+<span class="fragment current-only" data-code-focus="4,7"></span>
+
         </script>
       </section>
 
@@ -647,7 +653,7 @@ https://blog.golang.org/share-memory-by-communicating
         <script type="text/template">
           ## Closed channels
 
-- We can't send values anymore
+- We can't send values anymore (`panic`!)
 - We can still receive values sent before closing it
 - If empty, receiving values gives the zero value of the channel type
 
@@ -661,6 +667,9 @@ https://blog.golang.org/share-memory-by-communicating
 	fmt.Println(<-ch) // "bar"
 	fmt.Println(<-ch) // ""
 ```
+
+<span class="fragment current-only" data-code-focus="4"></span>
+<span class="fragment current-only" data-code-focus="8"></span>
 
         </script>
       </section>
@@ -686,6 +695,8 @@ How to receive until the channel closes?
 ```
 
 If the channel is empty, `range` blocks until the channel is closed
+
+<span class="fragment current-only" data-code-focus="9"></span>
 
         </script>
       </section>
@@ -730,6 +741,8 @@ If more than one condition is ready, a `case` is randomly chosen
 	}
 ```
 
+<span class="fragment current-only" data-code-focus="3"></span>
+
         </script>
       </section>
 
@@ -741,10 +754,13 @@ If more than one condition is ready, a `case` is randomly chosen
 	ch := make(chan int)
 	select {
 	case v := <-ch:
+		fmt.Printf("Value is %d", v)
 	case <- time.After(2*time.Second):
 		fmt.Print("no data after 2 seconds")
 	}
 ```
+
+<span class="fragment current-only" data-code-focus="5"></span>
 
         </script>
       </section>
@@ -1142,19 +1158,19 @@ exit status 2
 	WARNING: DATA RACE
 	Read at 0x00c4200ee2c0 by main goroutine:
 		main.runChecks()
-				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:35 +0x16b
+				main.go:35 +0x16b
 		main.main()
-				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:45 +0x87
+				main.go:45 +0x87
 
 	Previous write at 0x00c4200ee2c0 by goroutine 7:
 		main.runChecks.func1()
-				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:26 +0x178
+				main.go:26 +0x178
 
 	Goroutine 7 (finished) created at:
 		main.runChecks()
-				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:18 +0x123
+				main.go:18 +0x123
 		main.main()
-				/Users/ggarnier/dev/pessoal/talk-goroutines/x.go:45 +0x87
+				main.go:45 +0x87
 	==================
 	==================
 	WARNING: DATA RACE
@@ -1205,6 +1221,19 @@ exit status 2
 
       <section data-markdown>
         <script type="text/template">
+          # Conclusions
+
+- Go treats concurrency as first-class citizen
+- Goroutines make it easier to handle concurrent code
+- Channels make it easier to share state and handle goroutines lifecycle
+- Concurrency problems are still possible
+- Do not overuse concurrency
+
+        </script>
+      </section>
+
+      <section data-markdown>
+        <script type="text/template">
           # References
 
 <div style="display: flex; align-items: flex-start; justify-content: space-around">
@@ -1221,7 +1250,7 @@ exit status 2
 
       <section data-markdown>
         <script type="text/template">
-          # Questions?
+          # Thank you!
 
 <br />
 

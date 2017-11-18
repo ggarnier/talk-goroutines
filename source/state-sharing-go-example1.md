@@ -2,7 +2,7 @@
 
 ```go
 	type Results struct {
-		okCount	int
+		okCount  int
 		errCount int
 	}
 

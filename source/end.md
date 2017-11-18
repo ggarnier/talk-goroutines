@@ -1,4 +1,4 @@
-# Questions?
+# Thank you!
 
 <br />
 
