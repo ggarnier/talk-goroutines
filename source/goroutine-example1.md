@@ -15,3 +15,6 @@
 
 	wg.Wait()
 ```
+
+<span class="fragment current-only" data-code-focus="1,5,6"></span>
+<span class="fragment current-only" data-code-focus="8-11"></span>

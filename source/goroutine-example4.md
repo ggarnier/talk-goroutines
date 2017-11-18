@@ -11,6 +11,8 @@
   </div>
 </div>
 
-`GOMAXPROCS=1 go run main.go` (single thread, with sleep)
+<div style="margin-top: 30px">
+  `GOMAXPROCS=1 go run main.go` (single thread, with sleep)
 
-<img src="static/trace-singlethread-sleep.png" style="width:1200px; height: 140px" />
+  <img src="static/trace-singlethread-sleep.png" style="width:1200px; height: 140px" />
+</div>

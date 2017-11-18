@@ -14,3 +14,6 @@
 ```
 
 If more than one condition is ready, a `case` is randomly chosen
+
+<span class="fragment current-only" data-code-focus="2,4,6"></span>
+<span class="fragment current-only" data-code-focus="8"></span>

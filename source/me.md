@@ -13,10 +13,10 @@
   </div>
 
   <div>
-    <img src="static/globocom.png" style="height: 300px" /> <!-- .element: class="fragment" data-fragment-index="1" -->
+    <img src="static/globocom.png" style="height: 300px" />
 
-    <p style="font-size: 150%">We're hiring!</p> <!-- .element: class="fragment" data-fragment-index="2" -->
+    <p style="font-size: 150%">We're hiring!</p> <!-- .element: class="fragment" data-fragment-index="1" -->
 
-    https://talentos.globo.com <!-- .element: class="fragment" data-fragment-index="2" -->
+    https://talentos.globo.com <!-- .element: class="fragment" data-fragment-index="1" -->
   </div>
 </div>

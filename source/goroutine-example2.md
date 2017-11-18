@@ -11,12 +11,14 @@
   </div>
 </div>
 
-`go run main.go` (multithread)
+<div style="margin-top: 30px"> <!-- .element: class="fragment" data-fragment-index="1" -->
+  `go run main.go` (multithread)
 
-<img src="static/trace-multithread.png" style="width:1200px; height: 80px" />
+  <img src="static/trace-multithread.png" style="width:1200px; height: 80px" />
+</div>
 
-<br />
+<div style="margin-top: 30px"> <!-- .element: class="fragment" data-fragment-index="2" -->
+  `GOMAXPROCS=1 go run main.go` (single thread)
 
-`GOMAXPROCS=1 go run main.go` (single thread)
-
-<img src="static/trace-singlethread-nosleep.png" style="width:1200px; height: 120px" />
+  <img src="static/trace-singlethread-nosleep.png" style="width:1200px; height: 120px" />
+</div>

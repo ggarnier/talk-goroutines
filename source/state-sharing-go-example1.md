@@ -13,3 +13,5 @@
 		fmt.Printf("%d ok, %d errors\n", r.okCount, r.errCount)
 	}
 ```
+
+<span class="fragment current-only" data-code-focus="7,9"></span>
