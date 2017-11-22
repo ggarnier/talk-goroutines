@@ -7,7 +7,7 @@
 	randomNumbers := func() <-chan int {
 		stream := make(chan int)
 		go func() {
-			defer close(stream)
+			defer close(stream) // This will never run
 			for {
 				stream <- rand.Intn(100)
 			}

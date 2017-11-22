@@ -3,7 +3,7 @@
 ```go
 	func runChecks(urls []string) Results {
 		r := Results{}
-		responses := make(chan bool)
+		responses := make(chan bool, len(urls))
 		for _, url := range urls {
 			go func(url string) {
 				resp, err := http.Head(url)
