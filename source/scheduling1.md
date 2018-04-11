@@ -5,4 +5,4 @@
 | | **Goroutines** | **Threads** |
 |-|----------------|-------------|
 | **Scheduled by** | Go runtime | OS kernel |
-| **Work distribution** | defined in the code | defined by the Go scheduler |
+| **Work distribution** | defined by the Go scheduler | defined in the code |
