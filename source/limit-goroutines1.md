@@ -4,10 +4,10 @@
 
 ```go
 	max := 3 // Max simultaneous goroutines
-	running := make(chan struct{}, max)
+	running := make(chan bool, max)
 
 	for url := range urls {
-		running <- struct{}{} // waits for a free slot
+		running <- true // waits for a free slot
 		go func(url string) {
 			defer func() {
 				<-running // releases slot

@@ -14,7 +14,7 @@ type Results struct {
 
 func runChecks(urls <-chan string) Results {
 	max := 3 // Max parallel goroutines
-	running := make(chan struct{}, max)
+	running := make(chan bool, max)
 	r := Results{}
 	responses := make(chan bool)
 	wg := sync.WaitGroup{}
@@ -24,7 +24,7 @@ func runChecks(urls <-chan string) Results {
 		defer wg.Done()
 		for url := range urls {
 			wg.Add(1)
-			running <- struct{}{}
+			running <- true
 			go func(url string) {
 				defer func() {
 					<-running

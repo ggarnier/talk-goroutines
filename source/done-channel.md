@@ -5,10 +5,10 @@ Using a `done` channel
 <!-- examples/done-channel/main.go -->
 
 ```go
-	done := make(chan struct{})
+	done := make(chan bool)
 	go func() {
 		defer func() {
-			done <- struct{}{}
+			done <- true
 		}()
 		bufio.NewReader(os.Stdin).ReadByte() // read input from stdin
 	}()

@@ -11,11 +11,11 @@ import (
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	done := make(chan struct{})
+	done := make(chan bool)
 	go func() {
 		defer func() {
 			fmt.Println("finishing...")
-			done <- struct{}{}
+			done <- true
 		}()
 		bufio.NewReader(os.Stdin).ReadByte()
 	}()

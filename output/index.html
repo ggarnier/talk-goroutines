@@ -879,10 +879,10 @@ If more than one condition is ready, a `case` is randomly chosen
 
 ```go
 	max := 3 // Max simultaneous goroutines
-	running := make(chan struct{}, max)
+	running := make(chan bool, max)
 
 	for url := range urls {
-		running <- struct{}{} // waits for a free slot
+		running <- true // waits for a free slot
 		go func(url string) {
 			defer func() {
 				<-running // releases slot
@@ -908,7 +908,7 @@ If more than one condition is ready, a `case` is randomly chosen
 
 ```go
 	max := 3 // Max simultaneous goroutines
-	running := make(chan struct{}, max)
+	running := make(chan bool, max)
 
 	go func() {
 		for range time.Tick(100 * time.Millisecond) {
@@ -917,7 +917,7 @@ If more than one condition is ready, a `case` is randomly chosen
 	}()
 
 	for url := range urls {
-		running <- struct{}{} // waits for a free slot
+		running <- true // waits for a free slot
 		go func(url string) {
 			defer func() {
 				<-running // releases slot
@@ -941,10 +941,10 @@ Using a `done` channel
 <!-- examples/done-channel/main.go -->
 
 ```go
-	done := make(chan struct{})
+	done := make(chan bool)
 	go func() {
 		defer func() {
-			done <- struct{}{}
+			done <- true
 		}()
 		bufio.NewReader(os.Stdin).ReadByte() // read input from stdin
 	}()
