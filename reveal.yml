@@ -7,6 +7,7 @@ slides:
 - languages
 - concurrency-is-hard
 - go-concurrency
+- concurrency-parallelism
 - goroutine1
 - scheduling1
 - scheduling2
