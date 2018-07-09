@@ -9,7 +9,6 @@ slides:
 - go-concurrency
 - concurrency-parallelism
 - goroutine1
-- scheduling1
 - scheduling2
 - goroutine-example1
 - goroutine-example2

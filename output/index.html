@@ -184,20 +184,6 @@ https://blog.golang.org/concurrency-is-not-parallelism
 
       <section data-markdown>
         <script type="text/template">
-          # Scheduling
-
-<br />
-
-| | **Goroutines** | **Threads** |
-|-|----------------|-------------|
-| **Scheduled by** | Go runtime | OS kernel |
-| **Work distribution** | defined by the Go scheduler | defined in the code |
-
-        </script>
-      </section>
-
-      <section data-markdown>
-        <script type="text/template">
           # Go **M:N** scheduler
 
 Maps **M** goroutines to **N** threads
