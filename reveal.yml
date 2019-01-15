@@ -25,6 +25,9 @@ slides:
 - state-sharing-go-example-v2
 - state-sharing-go-example-v3
 - channel1
+- channel-diagrams1
+- channel-diagrams2
+- channel-diagrams3
 - channel2
 - channel3
 - channel4
